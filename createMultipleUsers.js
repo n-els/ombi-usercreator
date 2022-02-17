@@ -1,50 +1,36 @@
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 
-// Required Ombi-Data
+/* ***********************************************
+ *** URL to your Ombi installation is saved here.
+ *** You need to store your admin login credentials here
+ *** for the script to automatically login to the admin panel.
+ **************************************************/
+
 const ombiURL = 'http://localhost:5000/';
 const admin = {
   username: 'admin',
   password: 'admin',
 };
 
-// Required Google Spreadsheet Data
+/* ***********************************************
+ *** You will find the SpreadsheetId,
+ *** when you open the Spreadsheet in your Browser
+ *** Here is the sheetName with the stored eMails required.
+ *** The stored URL will convert your
+ *** specific Sheet to JSON-Data.
+ **************************************************/
+
 const spreadsheetID = '1UdQSxlq-pYvuTnkhNbHlWi1-m12q5hdYLi6PkMb5gbA';
 const sheetName = 'Anfragen';
 const URL = `https://gsx2json.com/api?id=${spreadsheetID}&sheet=${sheetName}`;
 
-// const users = [
-//   {
-//     username: 'tester1',
-//     email: 'test@test.com',
-//     streamingCountry: 'DE',
-//     password: 'test123',
-//   },
-//   {
-//     username: 'tester2',
-//     email: 'test@test.com',
-//     streamingCountry: 'DE',
-//     password: 'test123',
-//   },
-//   {
-//     username: 'tester3',
-//     email: 'test@test.com',
-//     streamingCountry: 'DE',
-//     password: 'test123',
-//   },
-//   {
-//     username: 'tester4',
-//     email: 'test@test.com',
-//     streamingCountry: 'DE',
-//     password: 'test123',
-//   },
-//   {
-//     username: 'tester5',
-//     email: 'test@test.com',
-//     streamingCountry: 'DE',
-//     password: 'test123',
-//   },
-// ];
+/************************************************
+ *** adminLogin(page)
+ *** This async function will
+ *** automatically login to your admin panel.
+ *** This function require your admin data.
+ **************************************************/
 
 async function adminLogin(page) {
   await page.waitForTimeout(500);
@@ -55,10 +41,23 @@ async function adminLogin(page) {
   await page.waitForTimeout(1000);
 }
 
+/************************************************
+ *** createUser(page, user)
+ *** This async function will
+ *** automatically create a User with the
+ *** delivered user data. It will fill out
+ *** the username, email and password fields.
+ *** Then it will give the user automatically
+ *** the role to request Movies.
+ *** You could add additional form fields here.
+ **************************************************/
+
 async function createUser(page, user) {
   await page.goto(`${ombiURL}usermanagement/user`);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
   await page.type('#username', user.username);
+  await page.waitForTimeout(2000);
+  await page.type('#emailAddress', user.email);
   await page.waitForTimeout(2000);
   await page.type('#password', user.password);
   await page.waitForTimeout(2000);
@@ -81,15 +80,16 @@ const getData = async function () {
   return data.json.columns['E-Mail-Adresse'];
 };
 
-async function start(users) {
+async function start() {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
   await page.goto(ombiURL);
+  const users = await getData();
 
   await adminLogin(page);
 
   for (let i = 0; i < users.length; i++) {
-    const user = users[i];
+    const user = { username: users[i], password: 'test1234', email: users[i] };
     await createUser(page, user);
   }
 
@@ -98,4 +98,4 @@ async function start(users) {
   await browser.close();
 }
 
-start(users);
+start();
