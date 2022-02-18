@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
+const rl = require('readline-sync');
 
 /* ***********************************************
  *** URL to your Ombi installation is saved here.
@@ -7,10 +8,12 @@ const fetch = require('node-fetch');
  *** for the script to automatically login to the admin panel.
  **************************************************/
 
-const ombiURL = 'http://localhost:5000/';
-const admin = {
-  username: 'admin',
-  password: 'admin',
+const ombiSettings = {
+  ombiURL: 'http://localhost:5000/',
+  admin: {
+    username: 'admin',
+    password: 'admin',
+  },
 };
 
 /* ***********************************************
@@ -21,9 +24,36 @@ const admin = {
  *** specific Sheet to JSON-Data.
  **************************************************/
 
-const spreadsheetID = '1UdQSxlq-pYvuTnkhNbHlWi1-m12q5hdYLi6PkMb5gbA';
-const sheetName = 'Anfragen';
-const URL = `https://gsx2json.com/api?id=${spreadsheetID}&sheet=${sheetName}`;
+const spreadsheetSettings = {
+  ID: '1UdQSxlq-pYvuTnkhNbHlWi1-m12q5hdYLi6PkMb5gbA',
+  sheetName: 'Anfragen',
+};
+
+let convertURL = `https://gsx2json.com/api?id=${spreadsheetSettings.ID}&sheet=${spreadsheetSettings.sheetName}`;
+
+/* ***********************************************
+ *** This function will lead you
+ *** through the process of configuring
+ *** your Ombi Settings.
+ **************************************************/
+
+function configureOmbi() {
+  ombiSettings.ombiURL = rl.question('Type your Ombi URL: ');
+  ombiSettings.admin.username = rl.question('Type your admin username: ');
+  ombiSettings.admin.password = rl.question('Type your admin password: ');
+}
+
+/* ***********************************************
+ *** This function will lead you
+ *** through the process of configuring
+ *** your Spreadsheet Settings.
+ **************************************************/
+
+function configureSpreadsheet() {
+  spreadsheetSettings.ID = rl.question('Type the Spreadsheet ID: ');
+  spreadsheetSettings.sheetName = rl.question('Type the specific Sheet Name: ');
+  convertURL = `https://gsx2json.com/api?id=${spreadsheetSettings.ID}&sheet=${spreadsheetSettings.sheetName}`;
+}
 
 /************************************************
  *** adminLogin(page)
@@ -33,12 +63,12 @@ const URL = `https://gsx2json.com/api?id=${spreadsheetID}&sheet=${sheetName}`;
  **************************************************/
 
 async function adminLogin(page) {
-  await page.waitForTimeout(500);
-  await page.type('#username-field', admin.username);
-  await page.type('#password-field', admin.password);
+  await page.waitForTimeout(100);
+  await page.type('#username-field', ombiSettings.admin.username);
+  await page.type('#password-field', ombiSettings.admin.password);
   await page.waitForTimeout(500);
   page.keyboard.press('Enter');
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(500);
 }
 
 /************************************************
@@ -53,24 +83,24 @@ async function adminLogin(page) {
  **************************************************/
 
 async function createUser(page, user) {
-  await page.goto(`${ombiURL}usermanagement/user`);
-  await page.waitForTimeout(1000);
+  await page.goto(`${ombiSettings.ombiURL}usermanagement/user`);
+  await page.waitForTimeout(300);
   await page.type('#username', user.username);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(100);
   await page.type('#emailAddress', user.email);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(100);
   await page.type('#password', user.password);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(100);
   await page.type('#confirmPass', user.password);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(100);
   await page.click('#roleRequestMovie');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(100);
   await page.click('[data-test="createuserbtn"]');
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(100);
 }
 
 const fetchData = async function () {
-  const res = await fetch(URL);
+  const res = await fetch(convertURL);
   const json = await res.json();
   return { json };
 };
@@ -83,8 +113,9 @@ const getData = async function () {
 async function start() {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
-  await page.goto(ombiURL);
+  await page.goto(ombiSettings.ombiURL);
   const users = await getData();
+  console.log(`We found ${users.length} Users in your spreadsheet.`);
 
   await adminLogin(page);
 
@@ -94,8 +125,24 @@ async function start() {
   }
 
   console.log(`${users.length} Users successfully created!`);
+  console.log('You can exit the script now.');
 
   await browser.close();
 }
 
-start();
+console.log('\nWelcome to the Ombi User Creator Script!');
+const selection = rl.question(`How do you want to continue?\n
+1. Generate users
+2. Set your Ombi settings
+3. Set your spreadsheet settings \n \n`);
+
+if (selection == 1) {
+  console.log('Starting..');
+  start();
+} else if (selection == 2) {
+  configureOmbi();
+  console.log('Ombi Settings successfully configured!');
+} else if (selection == 3) {
+  configureSpreadsheet();
+  console.log('Spreadsheet Settings successfully configured!');
+}
