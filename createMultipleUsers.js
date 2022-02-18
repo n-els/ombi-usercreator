@@ -60,11 +60,13 @@ function configureOmbi() {
 
 function configureSpreadsheet() {
   const spreadID = rl.question('Type the Spreadsheet ID: ');
-  const sheetName = rl.question('Type the specific Sheet Name: ');
+  const sheetName = rl.question('Type the specific sheet name: ');
+  const columnName = rl.question('Type the specific column name: ');
 
   const ssData = {
     ID: spreadID,
     sheetName: sheetName,
+    columnName: columnName,
   };
 
   writeJSONFile(ssData, './data/spreadsheet.json');
@@ -124,7 +126,7 @@ const fetchData = async function () {
 
 const getData = async function () {
   const data = await fetchData();
-  return data.json.columns['E-Mail-Adresse'];
+  return data.json.columns[`${spreadsheetSettings.columnName}`];
 };
 
 function menu() {
@@ -137,7 +139,6 @@ function menu() {
   if (selection == 1) {
     console.log('Generating..');
     createMultipleUsers();
-    menu();
   } else if (selection == 2) {
     configureOmbi();
     console.log('Ombi Settings successfully configured!');
@@ -154,7 +155,7 @@ async function createMultipleUsers() {
   const page = await browser.newPage();
   await page.goto(ombiSettings.ombiURL);
   const users = await getData();
-  console.log(`We found ${users.length} Users in your spreadsheet.`);
+  console.log(`I found ${users.length} Users in your spreadsheet.`);
 
   await adminLogin(page);
 
