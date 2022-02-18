@@ -4,7 +4,7 @@
   "description": "",
   "main": "createMultipleUsers.js",
   "scripts": {
-    "start": "createMultipleUsers.js"
+    "start": "node createMultipleUsers.js"
   },
   "keywords": [],
   "author": "nels",
