@@ -9,7 +9,7 @@ You need the email addresses of the users to be created
 stored in a Google Spreadsheet.
 This process can also be automated using Google Forms. But this is optional.
 
-A small tutorial will follow soon!
+A small video tutorial will follow soon!
 
 ## Installation
 
@@ -50,7 +50,9 @@ In the next steps you  will type in the
 username and password of the admin account.
 
 Then you will be back in the main menu.
-Now you should set up your Spreadsheet settings:
+
+Now you should set up your Spreadsheet settings.
+You must make sure your Google Sheet is set to be shared to 'anyone with the link'.
 
 Press `3`to start the process.
 
