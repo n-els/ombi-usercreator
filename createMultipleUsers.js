@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const fetch = require('node-fetch');
 const rl = require('readline-sync');
+const fs = require('fs');
 
 /* ***********************************************
  *** URL to your Ombi installation is saved here.
@@ -8,13 +9,7 @@ const rl = require('readline-sync');
  *** for the script to automatically login to the admin panel.
  **************************************************/
 
-const ombiSettings = {
-  ombiURL: 'http://localhost:5000/',
-  admin: {
-    username: 'admin',
-    password: 'admin',
-  },
-};
+const ombiSettings = JSON.parse(fs.readFileSync('./data/ombi.json', 'utf8'));
 
 /* ***********************************************
  *** You will find the SpreadsheetId,
@@ -24,12 +19,16 @@ const ombiSettings = {
  *** specific Sheet to JSON-Data.
  **************************************************/
 
-const spreadsheetSettings = {
-  ID: '1UdQSxlq-pYvuTnkhNbHlWi1-m12q5hdYLi6PkMb5gbA',
-  sheetName: 'Anfragen',
-};
+const spreadsheetSettings = JSON.parse(
+  fs.readFileSync('./data/spreadsheet.json', 'utf8')
+);
 
 let convertURL = `https://gsx2json.com/api?id=${spreadsheetSettings.ID}&sheet=${spreadsheetSettings.sheetName}`;
+
+function writeJSONFile(object, datapath) {
+  const jsonString = JSON.stringify(object);
+  fs.writeFileSync(datapath, jsonString);
+}
 
 /* ***********************************************
  *** This function will lead you
@@ -38,9 +37,19 @@ let convertURL = `https://gsx2json.com/api?id=${spreadsheetSettings.ID}&sheet=${
  **************************************************/
 
 function configureOmbi() {
-  ombiSettings.ombiURL = rl.question('Type your Ombi URL: ');
-  ombiSettings.admin.username = rl.question('Type your admin username: ');
-  ombiSettings.admin.password = rl.question('Type your admin password: ');
+  const ombiURL = rl.question('Type your Ombi URL: ');
+  const username = rl.question('Type your admin username: ');
+  const password = rl.question('Type your admin password: ');
+
+  const ombiData = {
+    ombiURL: ombiURL,
+    admin: {
+      username: username,
+      password: password,
+    },
+  };
+
+  writeJSONFile(ombiData, './data/ombi.json');
 }
 
 /* ***********************************************
@@ -50,8 +59,16 @@ function configureOmbi() {
  **************************************************/
 
 function configureSpreadsheet() {
-  spreadsheetSettings.ID = rl.question('Type the Spreadsheet ID: ');
-  spreadsheetSettings.sheetName = rl.question('Type the specific Sheet Name: ');
+  const spreadID = rl.question('Type the Spreadsheet ID: ');
+  const sheetName = rl.question('Type the specific Sheet Name: ');
+
+  const ssData = {
+    ID: spreadID,
+    sheetName: sheetName,
+  };
+
+  writeJSONFile(ssData, './data/spreadsheet.json');
+
   convertURL = `https://gsx2json.com/api?id=${spreadsheetSettings.ID}&sheet=${spreadsheetSettings.sheetName}`;
 }
 
@@ -110,7 +127,29 @@ const getData = async function () {
   return data.json.columns['E-Mail-Adresse'];
 };
 
-async function start() {
+function menu() {
+  console.log('\nWelcome to the Ombi User Creator Script!');
+  const selection = rl.question(`How do you want to continue?\n
+  1. Generate users
+  2. Set your Ombi settings
+  3. Set your Spreadsheet settings \n \n`);
+
+  if (selection == 1) {
+    console.log('Generating..');
+    createMultipleUsers();
+    menu();
+  } else if (selection == 2) {
+    configureOmbi();
+    console.log('Ombi Settings successfully configured!');
+    menu();
+  } else if (selection == 3) {
+    configureSpreadsheet();
+    console.log('Spreadsheet Settings successfully configured!');
+    menu();
+  }
+}
+
+async function createMultipleUsers() {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
   await page.goto(ombiSettings.ombiURL);
@@ -125,24 +164,8 @@ async function start() {
   }
 
   console.log(`${users.length} Users successfully created!`);
-  console.log('You can exit the script now.');
 
   await browser.close();
 }
 
-console.log('\nWelcome to the Ombi User Creator Script!');
-const selection = rl.question(`How do you want to continue?\n
-1. Generate users
-2. Set your Ombi settings
-3. Set your spreadsheet settings \n \n`);
-
-if (selection == 1) {
-  console.log('Starting..');
-  start();
-} else if (selection == 2) {
-  configureOmbi();
-  console.log('Ombi Settings successfully configured!');
-} else if (selection == 3) {
-  configureSpreadsheet();
-  console.log('Spreadsheet Settings successfully configured!');
-}
+menu();
