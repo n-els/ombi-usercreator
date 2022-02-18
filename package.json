@@ -1,13 +1,13 @@
 {
   "name": "ombi-uc",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "",
-  "main": "index.js",
+  "main": "createMultipleUsers.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "createMultipleUsers.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "nels",
   "license": "ISC",
   "dependencies": {
     "node-fetch": "^2.6.1",
